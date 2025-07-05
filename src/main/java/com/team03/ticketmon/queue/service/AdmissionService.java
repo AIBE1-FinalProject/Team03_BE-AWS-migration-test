@@ -1,5 +1,7 @@
 package com.team03.ticketmon.queue.service;
 
+import com.team03.ticketmon._global.exception.BusinessException;
+import com.team03.ticketmon._global.exception.ErrorCode;
 import com.team03.ticketmon._global.util.RedisKeyGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -82,7 +84,14 @@ public class AdmissionService {
         batch.getAtomicLong(activeUserCountKey).addAndGetAsync(userIds.size());
 
         // 배치 작업 실행
-        batch.execute();
+        try {
+            batch.execute();
+            log.info("{}명 입장 처리 배치 작업 성공. 현재 총 활성 사용자 수: {}",
+                    userIds.size(), redissonClient.getAtomicLong(activeUserCountKey).get());
+        } catch (Exception e) {
+            log.error("[BATCH_EXECUTE_FAILED] 사용자 ID 리스트 {} 입장 처리 중 배치 실행 실패", userIds, e);
+            throw new BusinessException(ErrorCode.REDIS_COMMAND_FAILED, "입장 처리 중 시스템 오류가 발생했습니다.");
+        }
 
         log.debug("{}명 입장 처리 완료. 현재 총 활성 사용자 수: {}", userIds.size(), redissonClient.getAtomicLong(activeUserCountKey).get());
         return issuedKeys;
