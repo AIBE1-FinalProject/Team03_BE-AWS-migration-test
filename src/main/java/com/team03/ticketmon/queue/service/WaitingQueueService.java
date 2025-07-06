@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBucket;
 import org.redisson.api.RScoredSortedSet;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -29,6 +30,9 @@ public class WaitingQueueService {
     private final AdmissionService admissionService;
     private final QueueRedisAdapter queueRedisAdapter;
 
+    @Value("${app.queue.max-active-users}")
+    private long maxActiveUsers; // 시스템이 동시에 수용 가능한 최대 활성 사용자 수
+
     /**
      * 특정 콘서트의 대기열에 사용자를 추가하고, 현재 대기 순번을 반환
      * 타임스탬프와 원자적 시퀀스를 조합한 유니크한 점수를 사용해 공정성을 보장
@@ -38,42 +42,41 @@ public class WaitingQueueService {
      * @return 1부터 시작하는 사용자의 대기 순번
      */
     public QueueStatusDto apply(Long concertId, Long userId) {
+        // 1. 현재 활성 사용자 수를 확인하여 즉시 입장을 시도할지 결정
+        long currentActiveUsers = queueRedisAdapter.getActiveUserCounter(concertId).get();
 
-        // [1단계] 콘서트 정보를 조회하여 대기열 활성화 여부 확인
-        boolean isQueueActive = concertService.isQueueActive(concertId);
-
-        if (isQueueActive) {
-            // [2-1단계] 대기열이 활성화된 경우: 대기열 등록 로직 수행
-            RScoredSortedSet<Long> queue = queueRedisAdapter.getQueue(concertId);
-
-            long uniqueScore = queueRedisAdapter.generateQueueScore(concertId);
-
-            if (!queue.addIfAbsent(uniqueScore, userId)) {
-                log.warn("[userId: {}] 이미 대기열에 등록된 상태", userId);
-                Integer existingRank = queue.rank(userId);
-                if (existingRank != null) {
-                    return QueueStatusDto.waiting(existingRank.longValue() + 1);
-                }
-                throw new BusinessException(ErrorCode.QUEUE_ALREADY_JOINED);
+        // 2. 자리가 남아있다고 판단되면, '원자적 슬롯 점유'를 시도
+        if (currentActiveUsers < maxActiveUsers) {
+            if (admissionService.tryClaimSlot(concertId)) {
+                log.debug("[userId: {}] 즉시 입장 처리 시작.", userId);
+                // 2-1. 슬롯 점유에 성공! -> 즉시 입장 처리
+                String accessKey = admissionService.grantAccess(concertId, userId);
+                return QueueStatusDto.immediateEntry(accessKey);
             }
-
-            log.debug("[userId: {}] 대기열 신규 신청. [콘서트: {}, 부여된 점수: {}]", userId, concertId, uniqueScore);
-            Integer rankIndex = queue.rank(userId);
-
-            if (rankIndex == null) {
-                log.error("[userId: {}] 대기열 순위 조회 실패", userId);
-                throw new BusinessException(ErrorCode.SERVER_ERROR);
-            }
-
-            return QueueStatusDto.waiting(rankIndex.longValue() + 1);
-
-        } else {
-            // [2-2단계] 대기열이 비활성화된 경우: 즉시 입장 처리
-            log.debug("[userId: {}] 대기열 비활성 상태. 즉시 입장 처리 시작.", userId);
-
-            return QueueStatusDto.immediateEntry(admissionService.grantAccess(concertId, userId));
         }
 
+        // 3. 슬롯이 꽉 찼거나, 점유 시도에 실패(경쟁에서 밀림)하면 대기열로 진입
+        RScoredSortedSet<Long> queue = queueRedisAdapter.getQueue(concertId);
+        long uniqueScore = queueRedisAdapter.generateQueueScore(concertId);
+
+        if (!queue.addIfAbsent(uniqueScore, userId)) {
+            log.warn("[userId: {}] 이미 대기열에 등록된 상태", userId);
+            Integer existingRank = queue.rank(userId);
+            if (existingRank != null) {
+                return QueueStatusDto.waiting(existingRank.longValue() + 1);
+            }
+            throw new BusinessException(ErrorCode.QUEUE_ALREADY_JOINED);
+        }
+
+        log.debug("[userId: {}] 대기열 신규 신청. [콘서트: {}, 부여된 점수: {}]", userId, concertId, uniqueScore);
+        Integer rankIndex = queue.rank(userId);
+
+        if (rankIndex == null) {
+            log.error("[userId: {}] 대기열 순위 조회 실패", userId);
+            throw new BusinessException(ErrorCode.SERVER_ERROR);
+        }
+
+        return QueueStatusDto.waiting(rankIndex.longValue() + 1);
     }
 
     /**
