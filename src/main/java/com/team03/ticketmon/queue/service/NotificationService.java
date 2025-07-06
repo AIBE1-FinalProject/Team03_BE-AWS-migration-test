@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team03.ticketmon.queue.adapter.QueueRedisAdapter;
 import com.team03.ticketmon.queue.dto.AdmissionEvent;
+import com.team03.ticketmon.queue.dto.RankUpdateEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RTopic;
@@ -45,6 +46,27 @@ public class NotificationService {
             log.debug("입장 알림 발행 완료. 사용자: {}, 수신자 수: {}", userId, receivers);
         } catch (JsonProcessingException e) {
             log.error("AdmissionEvent JSON 직렬화 실패! userId: {}", userId, e);
+        }
+    }
+
+    /**
+     * 특정 사용자에게 실시간 순위를 담아 알림 이벤트를 발행
+     * @param userId 알림을 받을 사용자 ID
+     * @param rank   현재 대기 순위
+     */
+    public void sendRankUpdate(Long userId, int rank) {
+        RankUpdateEvent event = new RankUpdateEvent(userId, rank);
+        try {
+            String message = objectMapper.writeValueAsString(event);
+
+            log.debug("실시간 순위 알림 발행 준비. 메시지: {}", message);
+
+            RTopic topic = queueRedisAdapter.getRankUpdateTopic();
+            long receivers = topic.publish(message);
+
+            log.debug("실시간 순위 알림 발행 완료. 사용자: {}, 수신자 수: {}", userId, receivers);
+        } catch (JsonProcessingException e) {
+            log.error("RankUpdateEvent 직렬화 실패! userId: {}", userId, e);
         }
     }
 }

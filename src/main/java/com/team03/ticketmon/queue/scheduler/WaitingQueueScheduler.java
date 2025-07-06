@@ -1,11 +1,11 @@
 package com.team03.ticketmon.queue.scheduler;
 
-import com.team03.ticketmon._global.util.RedisKeyGenerator;
 import com.team03.ticketmon.concert.domain.enums.ConcertStatus;
 import com.team03.ticketmon.concert.repository.ConcertRepository;
 import com.team03.ticketmon.queue.adapter.QueueRedisAdapter;
 import com.team03.ticketmon.queue.service.AdmissionService;
 import com.team03.ticketmon.queue.service.WaitingQueueService;
+import com.team03.ticketmon.queue.strategy.PersonalizedRankStrategy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.*;
@@ -30,6 +30,7 @@ public class WaitingQueueScheduler {
     private final ConcertRepository concertRepository;
     private final AdmissionService admissionService;
     private final QueueRedisAdapter queueRedisAdapter;
+    private final PersonalizedRankStrategy personalizedRankStrategy;
 
     @Value("${app.queue.max-active-users}")
     private long maxActiveUsers; // 시스템이 동시에 수용 가능한 최대 활성 사용자 수
@@ -94,6 +95,7 @@ public class WaitingQueueScheduler {
     private void processQueueForConcert(Long concertId) {
         log.debug("===== [콘서트 ID: {}] 대기열 처리 시작. =====", concertId);
 
+        // ==================== 1. 입장 처리 로직 ====================
         RAtomicLong activeUsersCount = queueRedisAdapter.getActiveUserCounter(concertId);
         long currentActiveUsers = activeUsersCount.get();
         // TODO: maxActiveUsers도 콘서트별로 다르게 설정할 수 있도록 DB에서 가져오는 로직 추가 가능 (우선순위: 최하)
@@ -116,5 +118,13 @@ public class WaitingQueueScheduler {
 
         // 추출된 사용자들에게 입장 허가 처리
         admissionService.grantAccess(concertId, admittedUserIds, true);
+
+        // ==================== 2. 알림 로직 실행 ====================
+        RScoredSortedSet<Long> queue = queueRedisAdapter.getQueue(concertId);
+
+        if (queue != null && !queue.isEmpty()) {
+            log.debug("[Notification] 콘서트 ID {}: 알림 전략 실행.", concertId);
+            personalizedRankStrategy.execute(concertId, queue);
+        }
     }
 }

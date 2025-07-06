@@ -3,6 +3,7 @@ package com.team03.ticketmon.websocket.subscriber;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team03.ticketmon.queue.adapter.QueueRedisAdapter;
 import com.team03.ticketmon.queue.dto.AdmissionEvent;
+import com.team03.ticketmon.queue.dto.RankUpdateEvent;
 import com.team03.ticketmon.websocket.handler.CustomWebSocketHandler;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,8 @@ public class RedisMessageSubscriber {
     public void subscribeToTopics() {
         // 입장 알림 구독
         subscribeToAdmissionTopic();
+
+        subscribeToRankUpdateTopic();
     }
 
     /**
@@ -63,5 +66,32 @@ public class RedisMessageSubscriber {
             }
         });
         log.info("[입장 알림] Redis Pub/Sub 구독 시작.");
+    }
+
+    /**
+     * 순위 업데이트 토픽을 구독
+     */
+    private void subscribeToRankUpdateTopic() {
+        RTopic topic = queueRedisAdapter.getRankUpdateTopic();
+
+        topic.addListener(CharSequence.class, (channel, msg) -> {
+            log.debug("[순위 알림] Redis 채널에서 메시지 수신. 채널: {}, 원본 메시지: {}", channel, msg);
+            try {
+                // 1. 순위 업데이트 이벤트 역직렬화
+                RankUpdateEvent event = objectMapper.readValue(msg.toString(), RankUpdateEvent.class);
+                log.debug("[순위 알림] 이벤트 수신 완료. 사용자: {}", event.userId());
+
+                // 2. WebSocket 핸들러를 통해 메시지 전송
+                Map<String, Object> payload = Map.of(
+                        "type", "RANK_UPDATE",
+                        "rank", event.rank()
+                );
+                webSocketHandler.sendMessageToUser(event.userId(), payload);
+
+            } catch (IOException e) {
+                log.error("[순위 알림] 수신된 메시지 처리 중 오류 발생!", e);
+            }
+        });
+        log.info("[순위 알림] Redis Pub/Sub 구독 시작.");
     }
 }
