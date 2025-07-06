@@ -1,8 +1,11 @@
 package com.team03.ticketmon.websocket.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team03.ticketmon.queue.domain.QueueStatus;
 import com.team03.ticketmon.queue.dto.QueueStatusDto;
 import com.team03.ticketmon.queue.service.WaitingQueueService;
+import com.team03.ticketmon.websocket.MessageType;
+import com.team03.ticketmon.websocket.WebSocketPayloadKeys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -15,12 +18,15 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 웹소켓 연결 및 메시지 처리를 담당하는 핸들러
+ * 재연결 시 사용자의 상태를 확인하여 무한 대기를 방지하는 로직을 포함
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class CustomWebSocketHandler extends TextWebSocketHandler {
 
-    // 동시성 이슈를 방지 목적, 스레드에 안전한 콜렉션 사용
     private final Map<Long, WebSocketSession> sessions = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
     private final WaitingQueueService waitingQueueService; //  <-- 이 줄을 추가합니다.
@@ -39,9 +45,13 @@ public class CustomWebSocketHandler extends TextWebSocketHandler {
         if (userId != null && concertId != null) {
             QueueStatusDto userStatus = waitingQueueService.getUserStatus(concertId, userId);
 
-            if ("ADMITTED".equals(userStatus.status())) {
+            if (userStatus.status() == QueueStatus.ADMITTED) {
                 log.info("[WebSocket] 이미 입장한 사용자(ID: {})의 재연결 시도. 예매 페이지로 리디렉션 유도.", userId);
-                session.sendMessage(new TextMessage("{\"type\":\"REDIRECT_TO_RESERVE\", \"accessKey\":\"" + userStatus.accessKey() + "\"}"));
+                Map<String, Object> redirectMessage = Map.of(
+                        WebSocketPayloadKeys.TYPE, MessageType.REDIRECT_TO_RESERVE.name(),
+                        WebSocketPayloadKeys.ACCESS_KEY, userStatus.accessKey()
+                );
+                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(redirectMessage)));
                 session.close(CloseStatus.NORMAL.withReason("Already admitted"));
                 return;
             }
@@ -142,9 +152,5 @@ public class CustomWebSocketHandler extends TextWebSocketHandler {
             }
         }
         log.debug("새 WebSocket 세션 등록: 사용자={}, 세션ID={}", userId, newSession.getId());
-    }
-
-    public void sendMessage(WebSocketSession session, TextMessage message) throws IOException {
-        session.sendMessage(message);
     }
 }

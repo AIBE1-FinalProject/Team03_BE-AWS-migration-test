@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team03.ticketmon.queue.adapter.QueueRedisAdapter;
 import com.team03.ticketmon.queue.dto.AdmissionEvent;
 import com.team03.ticketmon.queue.dto.RankUpdateEvent;
+import com.team03.ticketmon.websocket.MessageType;
+import com.team03.ticketmon.websocket.WebSocketPayloadKeys;
 import com.team03.ticketmon.websocket.handler.CustomWebSocketHandler;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -53,8 +55,8 @@ public class RedisMessageSubscriber {
 
                 // 2. WebSocket 핸들러를 통해 해당 사용자에게 전송할 메시지(Payload)를 구성
                 Map<String, Object> payload = Map.of(
-                        "type", "ADMIT",
-                        "accessKey", event.accessKey()
+                        WebSocketPayloadKeys.TYPE, MessageType.ADMIT.name(),
+                        WebSocketPayloadKeys.ACCESS_KEY, event.accessKey()
                 );
 
                 // 3. 구성된 메시지를 실제 클라이언트에게 전송
@@ -83,8 +85,8 @@ public class RedisMessageSubscriber {
 
                 // 2. WebSocket 핸들러를 통해 메시지 전송
                 Map<String, Object> payload = Map.of(
-                        "type", "RANK_UPDATE",
-                        "rank", event.rank()
+                        WebSocketPayloadKeys.TYPE, MessageType.RANK_UPDATE.name(),
+                        WebSocketPayloadKeys.RANK, event.rank()
                 );
                 webSocketHandler.sendMessageToUser(event.userId(), payload);
 

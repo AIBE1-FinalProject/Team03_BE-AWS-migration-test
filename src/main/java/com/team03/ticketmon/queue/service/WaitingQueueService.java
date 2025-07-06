@@ -28,9 +28,6 @@ public class WaitingQueueService {
     private final AdmissionService admissionService;
     private final QueueRedisAdapter queueRedisAdapter;
 
-    @Value("${app.queue.max-active-users}")
-    private long maxActiveUsers; // 시스템이 동시에 수용 가능한 최대 활성 사용자 수
-
     /**
      * 특정 콘서트의 대기열에 사용자를 추가하고, 현재 대기 순번을 반환
      * 타임스탬프와 원자적 시퀀스를 조합한 유니크한 점수를 사용해 공정성을 보장
@@ -97,7 +94,7 @@ public class WaitingQueueService {
         String accessKey = accessKeyBucket.get();
 
         if (accessKey != null) {
-            return new QueueStatusDto("ADMITTED", null, accessKey, "입장이 허가된 상태입니다.");
+            return QueueStatusDto.admitted(accessKey);
         }
 
         // 2. 대기열에 있는지 확인
@@ -105,11 +102,11 @@ public class WaitingQueueService {
         Integer rank = queue.rank(userId);
 
         if (rank != null) {
-            return new QueueStatusDto("WAITING", rank.longValue() + 1, null, "현재 대기 중입니다.");
+            return QueueStatusDto.waiting(rank.longValue() + 1);
         }
 
         // 3. 둘 다 해당 없으면 에러 또는 이탈 상태 반환
-        return new QueueStatusDto("EXPIRED_OR_NOT_IN_QUEUE", null, null, "대기열에 정보가 없거나 만료되었습니다.");
+        return QueueStatusDto.expiredOrNotInQueue();
     }
 
 }
