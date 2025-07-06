@@ -35,9 +35,6 @@ public class WaitingQueueScheduler {
     @Value("${app.queue.max-active-users}")
     private long maxActiveUsers; // 시스템이 동시에 수용 가능한 최대 활성 사용자 수
 
-    @Value("${app.queue.top-ranker-count}")
-    private long topRankerCount ; // 최상위 대기자 기준 설정
-
     /**
      * 10초마다 주기적으로 실행되어 대기열을 처리.
      * fixedDelay는 이전 작업이 성공적으로 끝난 후 10초를 기다리는 것을 의미.
