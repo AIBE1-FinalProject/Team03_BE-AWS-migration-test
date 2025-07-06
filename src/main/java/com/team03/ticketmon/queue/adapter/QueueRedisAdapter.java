@@ -37,8 +37,8 @@ public class QueueRedisAdapter {
         RAtomicLong sequence = redissonClient.getAtomicLong(sequenceKey);
         long currentSequence = sequence.incrementAndGet();
 
-        if (currentSequence == 1) {
-            sequence.expire(Duration.ofSeconds(2));
+        if (sequence.remainTimeToLive() == -1) {
+            sequence.expire(Duration.ofMillis(100));
         }
 
         if (currentSequence > MAX_SEQUENCE) {
