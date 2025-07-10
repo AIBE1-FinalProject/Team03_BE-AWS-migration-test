@@ -1,9 +1,6 @@
 name: Deploy to EC2
 
 on:
-  push:
-    branches:
-      - main # main 브랜치에 푸시될 때만 배포되도록 설정 (일반적으로 안정적인 브랜치)
   workflow_run:
     workflows: [ "Backend CI" ]  # backend-ci.yml 안의 workflow 이름
     types:
