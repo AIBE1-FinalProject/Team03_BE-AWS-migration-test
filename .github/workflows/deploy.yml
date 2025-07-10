@@ -5,7 +5,7 @@ name: Deploy to EC2
 on:
   # 'Backend CI Pipeline' 워크플로우가 성공적으로 완료되었을 때만 이 워크플로우를 트리거
   workflow_run:
-    workflows: ["Backend CI Pipeline"]  # backend-ci.yml 파일의 'name' 속성 값
+    workflows: [ "Backend CI Pipeline" ]  # backend-ci.yml 파일의 'name' 속성 값
     types:
       - completed # 'Backend CI Pipeline'이 완료되었을 때만 실행 (성공/실패 무관)
 
@@ -23,8 +23,8 @@ jobs:
 
     steps:
       - name: Connect to EC2 and Deploy Docker Container
-        uses: appleboy/ssh-action@master # SSH 접속을 위한 GitHub Action 사용
-        with: 
+        uses: appleboy/ssh-action@v0.1.6 # SSH 접속을 위한 GitHub Action 사용
+        with:
           host: ${{ secrets.EC2_HOST }} # EC2 인스턴스의 퍼블릭 IP 또는 DNS (GitHub Secrets에서 가져옴)
           username: ${{ secrets.EC2_USER }} # EC2 인스턴스 접속 사용자명 (예: ec2-user)
           key: ${{ secrets.EC2_KEY }} # EC2 접속용 프라이빗 키 (GitHub Secrets에서 가져옴)
@@ -50,26 +50,26 @@ jobs:
             echo "🚀 새 Docker 컨테이너 실행 중..."
             # 모든 -e 옵션의 값을 따옴표로 감싸서 쉘 문법 오류 방지
             docker run -d \
-              --name ticketmon-backend \
-              -p 80:8080 \ # 외부 80 포트를 Spring Boot의 8080 포트에 연결
-              -e SPRING_PROFILES_ACTIVE=prod \
-              -e DB_URL='${{ secrets.DB_URL }}' \
-              -e DB_USERNAME='${{ secrets.DB_USERNAME }}' \
-              -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
-              -e SPRING_DATA_REDIS_HOST='${{ secrets.SPRING_DATA_REDIS_HOST }}' \
-              -e SPRING_DATA_REDIS_PORT='${{ secrets.SPRING_DATA_REDIS_PORT }}' \
-              -e SPRING_DATA_REDIS_USERNAME='${{ secrets.SPRING_DATA_REDIS_USERNAME }}' \
-              -e SPRING_DATA_REDIS_PASSWORD='${{ secrets.SPRING_DATA_REDIS_PASSWORD }}' \
-              -e AWS_ACCESS_KEY_ID='${{ secrets.AWS_ACCESS_KEY_ID }}' \
-              -e AWS_SECRET_ACCESS_KEY='${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
-              -e JWT_SECRET_KEY='${{ secrets.JWT_SECRET_KEY }}' \
-              -e JWT_ACCESS_EXPIRATION_MS='${{ secrets.JWT_ACCESS_EXPIRATION_MS }}' \
-              -e JWT_REFRESH_EXPIRATION_MS='${{ secrets.JWT_REFRESH_EXPIRATION_MS }}' \
-              -e SQS_ENDPOINT='${{ secrets.SQS_ENDPOINT }}' \
-              -e TOSS_CLIENT_KEY='${{ secrets.TOSS_CLIENT_KEY }}' \
-              -e TOSS_SECRET_KEY='${{ secrets.TOSS_SECRET_KEY }}' \
-              -e TOGETHER_API_KEY='${{ secrets.TOGETHER_API_KEY }}' \
-              -e BASE_URL='${{ secrets.BASE_URL }}' \
-              ghcr.io/${{ secrets.DOCKER_IMAGE_REPO }}:latest
+            --name ticketmon-backend \
+            -p 80:8080 \ # 외부 80 포트를 Spring Boot의 8080 포트에 연결
+            -e SPRING_PROFILES_ACTIVE=prod \
+            -e DB_URL='${{ secrets.DB_URL }}' \
+            -e DB_USERNAME='${{ secrets.DB_USERNAME }}' \
+            -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+            -e SPRING_DATA_REDIS_HOST='${{ secrets.SPRING_DATA_REDIS_HOST }}' \
+            -e SPRING_DATA_REDIS_PORT='${{ secrets.SPRING_DATA_REDIS_PORT }}' \
+            -e SPRING_DATA_REDIS_USERNAME='${{ secrets.SPRING_DATA_REDIS_USERNAME }}' \
+            -e SPRING_DATA_REDIS_PASSWORD='${{ secrets.SPRING_DATA_REDIS_PASSWORD }}' \
+            -e AWS_ACCESS_KEY_ID='${{ secrets.AWS_ACCESS_KEY_ID }}' \
+            -e AWS_SECRET_ACCESS_KEY='${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
+            -e JWT_SECRET_KEY='${{ secrets.JWT_SECRET_KEY }}' \
+            -e JWT_ACCESS_EXPIRATION_MS='${{ secrets.JWT_ACCESS_EXPIRATION_MS }}' \
+            -e JWT_REFRESH_EXPIRATION_MS='${{ secrets.JWT_REFRESH_EXPIRATION_MS }}' \
+            -e SQS_ENDPOINT='${{ secrets.SQS_ENDPOINT }}' \
+            -e TOSS_CLIENT_KEY='${{ secrets.TOSS_CLIENT_KEY }}' \
+            -e TOSS_SECRET_KEY='${{ secrets.TOSS_SECRET_KEY }}' \
+            -e TOGETHER_API_KEY='${{ secrets.TOGETHER_API_KEY }}' \
+            -e BASE_URL='${{ secrets.BASE_URL }}' \
+            ghcr.io/${{ secrets.DOCKER_IMAGE_REPO }}:latest
             
             echo "🎉 배포 완료!"
