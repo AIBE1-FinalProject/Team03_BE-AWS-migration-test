@@ -2,7 +2,7 @@ name: Deploy to EC2
 
 on:
   workflow_run:
-    workflows: [ "Backend CI" ]  # backend-ci.yml 안의 workflow 이름
+    workflows: [ "Backend CI Pipeline" ]  # backend-ci.yml 안의 workflow 이름
     types:
       - completed              # 완료 시 실행
 
