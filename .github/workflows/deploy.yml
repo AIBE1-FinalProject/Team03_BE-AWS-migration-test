@@ -1,29 +1,24 @@
 name: Deploy Backend to EC2
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - 'Dockerfile'
-      - '.github/workflows/deploy.yml'
+  workflow_run:
+    workflows: ["Backend CI Pipeline"]  # ✅ CI 워크플로 이름 (backend-ci.yml 내부의 name)
+    types:
+      - completed
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # ✅ CI 성공 시에만 실행
     name: Deploy Backend to EC2
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
       - name: Connect to EC2 and Deploy Docker Container
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_KEY }}  # ✅ 너가 보유한 키 이름으로 사용
           port: 22
           script: |
             echo "✅ EC2 접속 완료. 기존 컨테이너 중지 중..."
