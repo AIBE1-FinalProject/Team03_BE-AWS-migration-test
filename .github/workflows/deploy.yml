@@ -27,30 +27,30 @@ jobs:
             
             echo "🚀 새 Docker 컨테이너 실행 중..."
             docker run -d \
-              --name ticketmon-backend \
-              -p 80:8080 \
-              # --- 👇 여기에 모든 필요한 환경 변수 추가 👇 ---
-              -e SPRING_PROFILES_ACTIVE=prod \
-              -e DB_URL='${{ secrets.DB_URL }}' \
-              -e DB_USERNAME='${{ secrets.DB_USERNAME }}' \
-              -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
-              -e SPRING_DATA_REDIS_HOST='${{ secrets.SPRING_DATA_REDIS_HOST }}' \
-              -e SPRING_DATA_REDIS_PORT='${{ secrets.SPRING_DATA_REDIS_PORT }}' \
-              -e SPRING_DATA_REDIS_USERNAME='${{ secrets.SPRING_DATA_REDIS_USERNAME }}' \
-              -e SPRING_DATA_REDIS_PASSWORD='${{ secrets.SPRING_DATA_REDIS_PASSWORD }}' \
-              -e AWS_ACCESS_KEY_ID='${{ secrets.AWS_ACCESS_KEY_ID }}' \
-              -e AWS_SECRET_ACCESS_KEY='${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
-              -e JWT_SECRET_KEY='${{ secrets.JWT_SECRET_KEY }}' \
-              -e JWT_ACCESS_EXPIRATION_MS='${{ secrets.JWT_ACCESS_EXPIRATION_MS }}' \
-              -e JWT_REFRESH_EXPIRATION_MS='${{ secrets.JWT_REFRESH_EXPIRATION_MS }}' \
-              -e SQS_ENDPOINT='${{ secrets.SQS_ENDPOINT }}' \
-              -e AWS_ACCESS_KEY='${{ secrets.AWS_ACCESS_KEY }}' \
-              -e AWS_SECRET_KEY='${{ secrets.AWS_SECRET_KEY }}' \
-              -e TOSS_CLIENT_KEY='${{ secrets.TOSS_CLIENT_KEY }}' \
-              -e TOSS_SECRET_KEY='${{ secrets.TOSS_SECRET_KEY }}' \
-              -e TOGETHER_API_KEY='${{ secrets.TOGETHER_API_KEY }}' \
-              -e BASE_URL='${{ secrets.BASE_URL }}' \
-              # --- 👆 여기에 모든 필요한 환경 변수 추가 👆 ---
-              ghcr.io/${{ secrets.DOCKER_IMAGE_REPO }}:latest
+            --name ticketmon-backend \
+            -p 80:8080 \
+            # --- 👇 여기에 모든 필요한 환경 변수 추가 👇 ---
+            -e SPRING_PROFILES_ACTIVE=prod \
+            -e DB_URL='${{ secrets.DB_URL }}' \
+            -e DB_USERNAME='${{ secrets.DB_USERNAME }}' \
+            -e DB_PASSWORD='${{ secrets.DB_PASSWORD }}' \
+            -e SPRING_DATA_REDIS_HOST='${{ secrets.SPRING_DATA_REDIS_HOST }}' \
+            -e SPRING_DATA_REDIS_PORT='${{ secrets.SPRING_DATA_REDIS_PORT }}' \
+            -e SPRING_DATA_REDIS_USERNAME='${{ secrets.SPRING_DATA_REDIS_USERNAME }}' \
+            -e SPRING_DATA_REDIS_PASSWORD='${{ secrets.SPRING_DATA_REDIS_PASSWORD }}' \
+            -e AWS_ACCESS_KEY_ID='${{ secrets.AWS_ACCESS_KEY_ID }}' \
+            -e AWS_SECRET_ACCESS_KEY='${{ secrets.AWS_SECRET_ACCESS_KEY }}' \
+            -e JWT_SECRET_KEY='${{ secrets.JWT_SECRET_KEY }}' \
+            -e JWT_ACCESS_EXPIRATION_MS='${{ secrets.JWT_ACCESS_EXPIRATION_MS }}' \
+            -e JWT_REFRESH_EXPIRATION_MS='${{ secrets.JWT_REFRESH_EXPIRATION_MS }}' \
+            -e SQS_ENDPOINT='${{ secrets.SQS_ENDPOINT }}' \
+            -e AWS_ACCESS_KEY='${{ secrets.AWS_ACCESS_KEY }}' \
+            -e AWS_SECRET_KEY='${{ secrets.AWS_SECRET_KEY }}' \
+            -e TOSS_CLIENT_KEY='${{ secrets.TOSS_CLIENT_KEY }}' \
+            -e TOSS_SECRET_KEY='${{ secrets.TOSS_SECRET_KEY }}' \
+            -e TOGETHER_API_KEY='${{ secrets.TOGETHER_API_KEY }}' \
+            -e BASE_URL='${{ secrets.BASE_URL }}' \
+            # --- 👆 여기에 모든 필요한 환경 변수 추가 👆 ---
+            ghcr.io/${{ secrets.DOCKER_IMAGE_REPO }}:latest
             
             echo "🎉 배포 완료!"
