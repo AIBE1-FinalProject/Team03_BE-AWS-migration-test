@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Connect to EC2 and Deploy Docker Container
         uses: appleboy/ssh-action@master # SSH 접속을 위한 GitHub Action 사용
-        with:
+        with: 
           host: ${{ secrets.EC2_HOST }} # EC2 인스턴스의 퍼블릭 IP 또는 DNS (GitHub Secrets에서 가져옴)
           username: ${{ secrets.EC2_USER }} # EC2 인스턴스 접속 사용자명 (예: ec2-user)
           key: ${{ secrets.EC2_KEY }} # EC2 접속용 프라이빗 키 (GitHub Secrets에서 가져옴)
