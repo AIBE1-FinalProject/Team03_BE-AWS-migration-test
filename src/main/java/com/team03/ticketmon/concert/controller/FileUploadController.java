@@ -18,34 +18,30 @@ import com.team03.ticketmon._global.util.uploader.StorageUploader;
 
 import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/upload")
-@RequiredArgsConstructor
 public class FileUploadController {
 
 	private final StorageUploader storageUploader;
-	private final SupabaseProperties supabaseProperties;
 
 	@PostMapping("/poster")
 	public ResponseEntity<SuccessResponse<String>> uploadPoster(
-		@RequestParam("file") MultipartFile file,
-		@RequestParam(required = false) Long concertId
+			@RequestParam("file") MultipartFile file,
+			@RequestParam(required = false) Long concertId
 	) {
 		try {
 			// 파일 검증
 			FileValidator.validate(file);
 
-			// 업로드 경로 생성
+			// 업로드 경로 설정
 			String path = concertId != null ?
-				UploadPathUtil.getPosterPath(concertId, getFileExtension(file)) :
-				"poster/temp/" + UUID.randomUUID();
+					UploadPathUtil.getPosterPath(concertId, getFileExtension(file)) :
+					"poster/temp/" + UUID.randomUUID();
 
-			// Supabase에 업로드
-			String url = storageUploader.uploadFile(
-				file,
-				supabaseProperties.getPosterBucket(),
-				path
-			);
+			// ✅ 환경에 따라 자동으로 Supabase or S3 에 업로드
+			String bucket = "poster"; // ✅ S3/Supabase 양쪽 모두에서 일관된 버킷 이름 사용
+			String url = storageUploader.uploadFile(file, bucket, path);
 
 			return ResponseEntity.ok(SuccessResponse.of("파일 업로드 성공", url));
 
