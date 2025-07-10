@@ -6,7 +6,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
-import org.redisson.config.ClusterServersConfig;
 import org.redisson.config.Config;
 import org.redisson.config.SingleServerConfig;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,15 +61,13 @@ public class RedissonConfig {
         log.debug("Redisson Client를 생성합니다. Address: {}", redisUrl);
 
         // 단일 서버 모드 설정
-        ClusterServersConfig serverConfig = config.useClusterServers()
-                .addNodeAddress("redis://master.aibe1-team03-redis-cluster.q7gdno.apn2.cache.amazonaws.com:6379")
-                .setPassword(redisPassword) // 필요 시
-                .setMasterConnectionMinimumIdleSize(1)
-                .setMasterConnectionPoolSize(10)
-                .setRetryAttempts(3)
-                .setRetryInterval(1000)
-                .setTimeout(3000)
-                .setScanInterval(2000); // 클러스터 상태 점검 주기 (ms)
+        SingleServerConfig serverConfig = config.useSingleServer()
+                .setAddress(redisUrl)
+                .setConnectionMinimumIdleSize(1)    // 최소 유휴 연결 수
+                .setConnectionPoolSize(10)          // 연결 풀 크기
+                .setRetryAttempts(3)                // 재시도 횟수
+                .setRetryInterval(1000)             // 재시도 간격 (ms)
+                .setTimeout(3000);                  // 타임아웃 (ms)
 
         if (StringUtils.hasText(redisUsername)) {
             serverConfig.setUsername(redisUsername);
