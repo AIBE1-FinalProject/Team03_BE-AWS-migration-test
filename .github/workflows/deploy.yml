@@ -32,11 +32,11 @@ jobs:
 
           # 이 script 블록 내의 모든 환경 변수 값들은 따옴표로 감싸야 합니다.
           # 이는 bash 쉘의 특수 문자 해석 문제를 방지하고, 시크릿 값에 공백이나 특수 문자가 포함될 경우에도 안전하게 전달하기 위함입니다.
-          script:
-            set -xe # 오류 발생 시 즉시 종료 및 디버깅 용이
-            echo "✅ EC2 접속 완료. 기존 컨테이너 중지 중..."
-            docker stop ticketmon-backend || true # 기존 컨테이너 중지 (없으면 오류 무시)
-            docker rm ticketmon-backend || true   # 기존 컨테이너 삭제 (없으면 오류 무시)
+          script: |
+            set -xe
+            echo "EC2 접속 완료. 기존 컨테이너 중지 중..."
+            docker stop ticketmon-backend || true
+            docker rm ticketmon-backend || true
 
             echo "🔐 GHCR 로그인 중..."
             # GHCR 로그인 (GitHub Actions 기본 토큰 사용)
